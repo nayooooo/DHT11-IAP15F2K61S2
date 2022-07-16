@@ -1,0 +1,205 @@
+C51 COMPILER V9.54   SGM                                                                   07/16/2022 18:12:11 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE SGM
+OBJECT MODULE PLACED IN ..\Obj\sgm.obj
+COMPILER INVOKED BY: D:\keil 5 - C51\C51\BIN\C51.EXE ..\Hardware\SGM\sgm.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\FWLib;..\U
+                    -ser;..\System\MyTime;..\Hardware\LED;..\Hardware\SGM;..\Hardware\DHT11) DEBUG OBJECTEXTEND PRINT(.\Listings\sgm.lst) OBJ
+                    -ECT(..\Obj\sgm.obj)
+
+line level    source
+
+   1          #include "sgm.h"
+   2          #include "config.h"
+   3          #include "GPIO.h"
+   4          #include "delay.h"
+   5          
+   6          /*----------- 共阴极数码管 -----------*/
+   7          
+   8          // 位选表
+   9          u8 code Tabel_WE[] = {
+  10          // 0     1         2     3         4     5         6     7
+  11          0XFE, 0XFD, 0XFB, 0XF7, 0XEF, 0XDF, 0XBF, 0X7F,
+  12          };
+  13          
+  14          // 段选表
+  15          u8 code Tabel_DU[] = {
+  16          // 0     1         2     3         4     5         6     7         8     9
+  17          0X3F, 0X06, 0X5B, 0X4F, 0X66, 0X6D, 0X7D, 0X07, 0X7F, 0X6F,
+  18          };
+  19          
+  20          sbit DU = P2^6;  // 数码管段选控制位
+  21          sbit WE = P2^7;  // 数码管位选控制位
+  22          #define SGM_Control_Port        GPIO_P2
+  23          #define SGM_Control_DU_Pin      P26
+  24          #define SGM_Control_WE_Pin      P27
+  25          
+  26          #define SGM_Data_Port   GPIO_P0
+  27          #define SGM_Pin                 P0
+  28          
+  29          /*----------- 共阴极数码管 -----------*/
+  30          
+  31          void SGM_GPIO_Config(void)
+  32          {
+  33   1              GPIO_InitTypeDef GPIO_InitStructure;
+  34   1              
+  35   1              GPIO_InitStructure.Pin = GPIO_Pin_All;
+  36   1              GPIO_InitStructure.Mode = GPIO_OUT_PP;
+  37   1              GPIO_Inilize(SGM_Data_Port, &GPIO_InitStructure);
+  38   1              
+  39   1              GPIO_InitStructure.Pin = SGM_Control_DU_Pin|SGM_Control_WE_Pin;
+  40   1              GPIO_InitStructure.Mode = GPIO_OUT_PP;
+  41   1              GPIO_Inilize(SGM_Control_Port, &GPIO_InitStructure);
+  42   1              
+  43   1              DU = 0; WE = 0;
+  44   1      }
+  45          
+  46          // 清除段选
+  47          static void SGM_Clear_DU(void)
+  48          {
+  49   1              SGM_Pin = 0X00;
+  50   1              DU = 1;
+  51   1              DU = 0;
+  52   1      }
+  53          
+C51 COMPILER V9.54   SGM                                                                   07/16/2022 18:12:11 PAGE 2   
+
+  54          // 清除位选
+  55          static void SGM_Clear_WE(void)
+  56          {
+  57   1              SGM_Pin = 0XFF;
+  58   1              WE = 1;
+  59   1              WE = 0;
+  60   1      }
+  61          
+  62          // 设置段选
+  63          static void SGM_Set_DU(u8 du)
+  64          {
+  65   1              SGM_Pin = du;
+  66   1              DU = 1;
+  67   1              DU = 0;
+  68   1      }
+  69          
+  70          // 设置位选
+  71          static void SGM_Set_WE(u8 we)
+  72          {
+  73   1              SGM_Pin = we;
+  74   1              WE = 1;
+  75   1              WE = 0;
+  76   1      }
+  77          
+  78          // 清除数码管显示
+  79          void SGM_Clear(void)
+  80          {
+  81   1              SGM_Clear_WE();
+  82   1      }
+  83          
+  84          // 设置数码管显示一位
+  85          void SGM_Set_One(u8 we, u8 du)
+  86          {
+  87   1              SGM_Clear_WE();
+  88   1              SGM_Set_DU(du);
+  89   1              SGM_Set_WE(we);
+  90   1      }
+  91          
+  92          // 设置数码管显示一位数字
+  93          void SGM_Set_Num(u8 we, u8 du)
+  94          {
+  95   1              SGM_Set_One(Tabel_WE[we], Tabel_DU[du]);
+  96   1      }
+  97          
+  98          // 设置数码管显示一位数字（带点）
+  99          void SGM_Set_Num_Point(u8 we, u8 du)
+ 100          {
+ 101   1              SGM_Set_One(Tabel_WE[we], Tabel_DU[du] | 0X80);
+ 102   1      }
+ 103          
+ 104          // 数码管显示数字
+ 105          void SGM_Display_Nums(u32 num)
+ 106          {
+ 107   1              u8 i = SGM_DIGIT-1;
+ 108   1              
+ 109   1              if(num==0)  // num==0则会直接跳出循环
+ 110   1              {
+ 111   2                      SGM_Set_Num(i, num);
+ 112   2                      return;
+ 113   2              }
+ 114   1              while(num && i)
+ 115   1              {
+C51 COMPILER V9.54   SGM                                                                   07/16/2022 18:12:11 PAGE 3   
+
+ 116   2                      SGM_Set_Num(i, num%10);
+ 117   2                      num /= 10;
+ 118   2                      i--;
+ 119   2              }
+ 120   1      }
+ 121          
+ 122          // 数码管指定位置显示数字（指定数字的最后一位）
+ 123          void SGM_Appoint_Display_Nums(u32 num, u8 addr)
+ 124          {
+ 125   1              u8 i = addr;
+ 126   1              
+ 127   1              if(num==0)  // num==0则会直接跳出循环
+ 128   1              {
+ 129   2                      SGM_Set_Num(i, num);
+ 130   2                      return;
+ 131   2              }
+ 132   1              while(num && i)
+ 133   1              {
+ 134   2                      SGM_Set_Num(i, num%10);
+ 135   2                      num /= 10;
+ 136   2                      i--;
+ 137   2              }
+ 138   1      }
+ 139          
+ 140          // 数码管指定位置显示数字（小数）（指定整数部分的最后一位）
+ 141          void SGM_Appoint_Display_Eecimal(u32 Int_part, u8 Fra_Part, u8 addr)
+ 142          {
+ 143   1              u8 i = addr;
+ 144   1              
+ 145   1              if(Fra_Part==0)  // Fra_Part==0则会直接跳出循环
+ 146   1              {
+ 147   2                      SGM_Set_Num(i, Fra_Part);
+ 148   2                      i--;
+ 149   2                      goto Fra_Part_Out;
+ 150   2              }
+ 151   1              
+ 152   1              // 显示小数部分
+ 153   1              while(Fra_Part && i)
+ 154   1              {
+ 155   2                      SGM_Set_Num(i, Fra_Part%10);
+ 156   2                      Fra_Part /= 10;
+ 157   2                      i--;
+ 158   2              }
+ 159   1      Fra_Part_Out:
+ 160   1              
+ 161   1              // 显示整数部分的个位
+ 162   1              // 如果Int_part==0，则执行下方语句后Int_part==0
+ 163   1              SGM_Set_Num_Point(i, Int_part%10);
+ 164   1              if(Int_part==0) return;
+ 165   1              Int_part /= 10;
+ 166   1              i--;
+ 167   1              // 显示整数部分的其他位
+ 168   1              while(Int_part && i)
+ 169   1              {
+ 170   2                      SGM_Set_Num(i, Int_part%10);
+ 171   2                      Int_part /= 10;
+ 172   2                      i--;
+ 173   2              }
+ 174   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+C51 COMPILER V9.54   SGM                                                                   07/16/2022 18:12:11 PAGE 4   
+
+   CODE SIZE        =    504    ----
+   CONSTANT SIZE    =     18    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      20
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,11 @@
+"..\Obj\delay.obj",
+"..\Obj\GPIO.obj",
+"..\Obj\timer.obj",
+"..\Obj\MyTime.obj",
+"..\Obj\main.obj",
+"..\Obj\led.obj",
+"..\Obj\sgm.obj",
+"..\Obj\DHT11.obj" 
+TO "..\Obj\TandH" 
+PRINT(".\Listings\TandH.m51") RAMSIZE(256) 
+DISABLEWARNING (15,16) 
