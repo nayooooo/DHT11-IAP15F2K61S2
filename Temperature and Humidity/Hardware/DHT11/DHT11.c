@@ -1,6 +1,6 @@
 /**
  * @file DHT11.c
- * @brief ÎÂÊª¶È´«¸ĞÆ÷Ä£¿é
+ * @brief æ¸©æ¹¿åº¦ä¼ æ„Ÿå™¨æ¨¡å—
  */
 #include "DHT11.h"
 #include "config.h"
@@ -11,52 +11,52 @@
 
 DHT11_DataPack_Typedef DHT11_Data;
 
-// ¶ÁDHT11´íÎó±êÖ¾
-// 0->ÎŞ´íÎó	(No_Error)
-// 1->³¬Ê±		(OverTime_Error)
-// 2->´«Êä´íÎó	(Transmission_Error)
-// 3->Êı¾İ¹ı¾É	(DataOld_Error)
+// è¯»DHT11é”™è¯¯æ ‡å¿—
+// 0->æ— é”™è¯¯	(No_Error)
+// 1->è¶…æ—¶		(OverTime_Error)
+// 2->ä¼ è¾“é”™è¯¯	(Transmission_Error)
+// 3->æ•°æ®è¿‡æ—§	(DataOld_Error)
 Read_DHT11_Error_Flag Read_DHT11_Error = 0;
 
 void DHT11_Init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	
-	delay_ms(1000);  // µÈ´ı1sÒÔÔ½¹ı²»ÎÈ¶¨×´Ì¬
+	delay_ms(1000);  // ç­‰å¾…1sä»¥è¶Šè¿‡ä¸ç¨³å®šçŠ¶æ€
 	
 	GPIO_InitStructure.Pin = DHT11_Data_Pin;
-	GPIO_InitStructure.Mode = GPIO_OUT_OD;  // ¿ªÂ©Êä³ö£¬±ãÓÚºóĞøµÄ¶ÁÈ¡DHT11
+	GPIO_InitStructure.Mode = GPIO_OUT_OD;  // å¼€æ¼è¾“å‡ºï¼Œä¾¿äºåç»­çš„è¯»å–DHT11
 	GPIO_Inilize(DHT11_Port, &GPIO_InitStructure);
 	
 	DHT11_Data_Clr();
 }
 
-// Ö÷»ú·¢ËÍ¿ªÊ¼ĞÅºÅ
+// ä¸»æœºå‘é€å¼€å§‹ä¿¡å·
 static void Start_DHT11(void)
 {
 	DHT11_Data_Clr();
 	DHT11_Data_Set();
-	delay_ms(18);		// À­µÍ×ÜÏßÖÁÉÙ18ms£¬±£Ö¤DHT11¼ì²âµ½ÆğÊ¼ĞÅºÅ
+	delay_ms(18);		// æ‹‰ä½æ€»çº¿è‡³å°‘18msï¼Œä¿è¯DHT11æ£€æµ‹åˆ°èµ·å§‹ä¿¡å·
 	DHT11_Data_Clr();
 }
 
-// ¶ÁÈ¡DHT11·¢ËÍµÄÊı¾İµÄÒ»¸ö×Ö½Ú
-// ²»ÖªµÀÎªÊ²Ã´³¬Ê±Ö±½ÓÍË³ö
-// ¿ÉÄÜÊÇÒòÎªºóÃæµÄÊı¾İ¶¼ÊÇ0°É
+// è¯»å–DHT11å‘é€çš„æ•°æ®çš„ä¸€ä¸ªå­—èŠ‚
+// ä¸çŸ¥é“ä¸ºä»€ä¹ˆè¶…æ—¶ç›´æ¥é€€å‡º
+// å¯èƒ½æ˜¯å› ä¸ºåé¢çš„æ•°æ®éƒ½æ˜¯0å§
 static u8 Read_DHT11_Part(void)
 {
 	u8 i;
 	u8 temp;
-	u8 Overtime_Flag;  // ³¬Ê±±ê¼Ç£¬±ÜÃâÒòDHT11¶ø¿¨ËÀ
-	u8 Read_Byte = 0X00;  // ¶ÁÈ¡µÄÊı¾İ
+	u8 Overtime_Flag;  // è¶…æ—¶æ ‡è®°ï¼Œé¿å…å› DHT11è€Œå¡æ­»
+	u8 Read_Byte = 0X00;  // è¯»å–çš„æ•°æ®
 	
 	for(i=0; i<8; i++)
 	{
 		Overtime_Flag = 0;
-		while(!DHT11_Data_Pin && ++Overtime_Flag);  // 1bit¿ªÊ¼
-		if(Overtime_Flag == 0) break;  // ³¬Ê±ÍË³ö
+		while(!DHT11_Data_Pin && ++Overtime_Flag);  // 1bitå¼€å§‹
+		if(Overtime_Flag == 0) break;  // è¶…æ—¶é€€å‡º
 		
-		// ÑÓÊ±30us
+		// å»¶æ—¶30us
 		Delay10us();
 		Delay10us();
 		Delay10us();
@@ -64,59 +64,59 @@ static u8 Read_DHT11_Part(void)
 		{
 			temp = 1;
 			Overtime_Flag = 0;
-			while(DHT11_Data_Pin && ++Overtime_Flag);  // Ö±µ½¸ßµçÆ½½áÊø
+			while(DHT11_Data_Pin && ++Overtime_Flag);  // ç›´åˆ°é«˜ç”µå¹³ç»“æŸ
 		}
 		else temp = 0;
-		if(Overtime_Flag == 0) break;  // ³¬Ê±ÍË³ö
+		if(Overtime_Flag == 0) break;  // è¶…æ—¶é€€å‡º
 		Read_Byte <<= 1;
 		Read_Byte |= temp;
 	}
 	return Read_Byte;
 }
 
-// ¶ÁÈ¡Ò»´ÎDHT11
+// è¯»å–ä¸€æ¬¡DHT11
 DHT11_DataPack_Typedef Read_DHT11(void)
 {
 	u8 i;
 	u8 Check_Byte;
-	u8 Overtime_Flag;  // ³¬Ê±±ê¼Ç£¬±ÜÃâÒòDHT11¶ø¿¨ËÀ
+	u8 Overtime_Flag;  // è¶…æ—¶æ ‡è®°ï¼Œé¿å…å› DHT11è€Œå¡æ­»
 	DHT11_DataPack_Typedef DHT11_Data = {0, 0, 0, 0, 0};
 	u8 *pByte = (u8*)&DHT11_Data;
 	
-	Read_DHT11_Error = No_Error;  // ÖØÖÃ¶ÁDHT11´íÎó±êÖ¾
+	Read_DHT11_Error = No_Error;  // é‡ç½®è¯»DHT11é”™è¯¯æ ‡å¿—
 	
 	Start_DHT11();
 	
-	// ÑÓÊ±20~40us
+	// å»¶æ—¶20~40us
 	Delay10us();
 	Delay10us();
 	Delay10us();
 	Delay10us();
-	// ¶ÁÈ¡DHT11µÄÏìÓ¦ĞÅºÅ
-	DHT11_Data_Read_Bef();  // Ö÷»úÉèÎªÊäÈë
-	if(!DHT11_Data_Pin)  // DHT11ÏìÓ¦
+	// è¯»å–DHT11çš„å“åº”ä¿¡å·
+	DHT11_Data_Read_Bef();  // ä¸»æœºè®¾ä¸ºè¾“å…¥
+	if(!DHT11_Data_Pin)  // DHT11å“åº”
 	{
 		Overtime_Flag = 0;
-		while(!DHT11_Data_Pin && ++Overtime_Flag);  // ÅĞ¶ÏDHT11µÄÏìÓ¦ĞÅºÅµÄµÍµçÆ½ÊÇ·ñ½áÊø
-		if(Overtime_Flag == 0)  // ³¬Ê±
+		while(!DHT11_Data_Pin && ++Overtime_Flag);  // åˆ¤æ–­DHT11çš„å“åº”ä¿¡å·çš„ä½ç”µå¹³æ˜¯å¦ç»“æŸ
+		if(Overtime_Flag == 0)  // è¶…æ—¶
 			Read_DHT11_Error = OverTime_Error;
 		Overtime_Flag = 0;
-		while(DHT11_Data_Pin && ++Overtime_Flag);  // ÅĞ¶ÏDHT11µÄÏìÓ¦ĞÅºÅµÄ¸ßµçÆ½ÊÇ·ñ½áÊø
-		if(Overtime_Flag == 0)  // ³¬Ê±
+		while(DHT11_Data_Pin && ++Overtime_Flag);  // åˆ¤æ–­DHT11çš„å“åº”ä¿¡å·çš„é«˜ç”µå¹³æ˜¯å¦ç»“æŸ
+		if(Overtime_Flag == 0)  // è¶…æ—¶
 			Read_DHT11_Error = OverTime_Error;
 		
-		// ¿ªÊ¼¶ÁÈ¡ĞÅÏ¢
-		for(i=0; i<8; i++)
+		// å¼€å§‹è¯»å–ä¿¡æ¯
+		for(i=0; i<5; i++)
 		{
 			*pByte = Read_DHT11_Part();
 			pByte++;
 		}
 	}
 	
-	// ÅĞ¶ÏÊÇ·ñ³öÏÖ´«Êä´íÎó
+	// åˆ¤æ–­æ˜¯å¦å‡ºç°ä¼ è¾“é”™è¯¯
 	Check_Byte = DHT11_Data.Hum_Data_Int + DHT11_Data.Hum_Data_Dec +\
 				DHT11_Data.Tem_Data_Int + DHT11_Data.Tem_Data_Dec;
-	if(DHT11_Data.Check_Byte!=Check_Byte)  // ´«Êä´íÎó
+	if(DHT11_Data.Check_Byte!=Check_Byte)  // ä¼ è¾“é”™è¯¯
 		Read_DHT11_Error = Transmission_Error;
 	
 	return DHT11_Data;
